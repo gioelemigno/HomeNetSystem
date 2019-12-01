@@ -1,0 +1,22 @@
+arduino.h
+	line 141 commented disabled
+
+wiring.c
+//	line 42	remove ISR for TIMER0
+
+//	line 243 redefine init()
+
+WInerrupt.c -> it should be complete redefined to allow own interrupt
+	line 38:	redefine intFunc
+	line 285:	comment
+
+HardwareSerial0
+	line 39 comment
+
+main.cpp
+	line 33 remove main
+	include arduino -> "arduino.h"
+	line 33: add arduinoSetup() (used in HNSDevice main)
+
+IPAddress.cpp
+	line 20 include <> -> ""

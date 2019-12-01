@@ -1,0 +1,69 @@
+
+CC=avr-gcc
+#CFLAGS=--std=gnu99 -O3 -DF_CPU=16000000UL  -funsigned-char -funsigned-bitfields  -fshort-enums -Wall -Wstrict-prototypes -mmcu=atmega328p $(INCLUDE_DIRS)  -D__AVR_3_BYTE_PC__
+CFLAGS=-O3 -DF_CPU=16000000UL -Wall -mmcu=atmega328p
+DEFINE_FLAGS=
+
+AVRDUDE=avrdude
+
+AVRDUDE_PROGRAMMER=arduino
+
+#AVRDUDE_PORT = /dev/ttyACM0    # programmer connected to serial device
+AVRDUDE_PORT = /dev/ttyUSB1
+
+AVRDUDE_FLAGS = -p m328p -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) -b 115200
+AVRDUDE_FLAGS += -D -q -V -C /usr/share/arduino/hardware/tools/avr/../avrdude.conf
+
+main.elf: ../src/main.cpp libHNSCore.a HNSTemperatureHumidityDTHxx.o 
+	$(CC) $(CFLAGS) $(LIBS) $(DEFINE_FLAGS) -o main.elf ../src/main.cpp  HNSTemperatureHumidityDTHxx.o libHNSCore.a 
+	avr-size -C --mcu=atmega328p main.elf
+
+#HNSLightRelay.o: ../lib/HNSDeviceLib/HNSLightRelay/HNSLightRelay.h ../lib/HNSDeviceLib/HNSLightRelay/HNSLightRelay.c
+#	$(CC) $(CFLAGS) $(DEFINE_FLAGS) -c  ../lib/HNSDeviceLib/HNSLightRelay/HNSLightRelay.c
+
+HNSTemperatureHumidityDTHxx.o: ../lib/HNSDeviceLib/HNSTemperatureHumidity_DTHxx/HNSTemperatureHumidityDTHxx.h ../lib/HNSDeviceLib/HNSTemperatureHumidity_DTHxx/HNSTemperatureHumidityDTHxx.c
+	$(CC) $(CFLAGS) $(DEFINE_FLAGS) -c  ../lib/HNSDeviceLib/HNSTemperatureHumidity_DTHxx/HNSTemperatureHumidityDTHxx.c
+
+#////////////////////////////libHNSCore////////////////////////////////////////
+
+libHNSCore.a: HNSSync.o HNSDevice.o HNSTest.o HNSRouting.o CRC.o HNSError.o USART_Atmega328.o Time_Atmega328.o ADC_Atmega328P.o
+	ar rvs libHNSCore.a HNSSync.o HNSDevice.o HNSTest.o HNSRouting.o CRC.o HNSError.o USART_Atmega328.o Time_Atmega328.o ADC_Atmega328P.o
+
+HNSDevice.o: libHNSCore.a ../lib/HNSDevice/HNSDevice.h ../lib/HNSDevice/HNSDevice.c ../lib/util/Atmega328P/avrMacro.h
+	$(CC) $(CFLAGS) $(DEFINE_FLAGS) -c  ../lib/HNSDevice/HNSDevice.c ../lib/util/Atmega328P/avrMacro.h
+
+HNSSync.o: ../lib/HNSDevice/HNSSync.h ../lib/HNSDevice/HNSSync.c
+	$(CC) $(CFLAGS) $(DEFINE_FLAGS) -c  ../lib/HNSDevice/HNSSync.c
+
+HNSTest.o : HNSRouting.o  ../lib/HNSCore/HNSTest.h  ../lib/HNSCore/HNSTest.c
+	$(CC) $(CFLAGS) $(DEFINE_FLAGS) -c  ../lib/HNSCore/HNSTest.c
+
+HNSRouting.o: USART_Atmega328.o HNSError.o CRC.o ../lib/HNSCore/HNSRouting.h ../lib/HNSCore/HNSRouting.c
+	$(CC) $(CFLAGS) $(DEFINE_FLAGS) -c  ../lib/HNSCore/HNSRouting.c
+
+CRC.o: ../lib/util/CRC.c ../lib/util/CRC.h
+	$(CC) $(CFLAGS) $(DEFINE_FLAGS) -c ../lib/util/CRC.c
+
+USART_Atmega328.o: Time_Atmega328.o ../lib/util/Atmega328P/USART_Atmega328.h ../lib/util/Atmega328P/USART_Atmega328.c ../lib/util/Atmega328P/MAX485.h ../lib/util/Atmega328P/avrMacro.h
+	$(CC) $(CFLAGS) $(DEFINE_FLAGS) -c  ../lib/util/Atmega328P/USART_Atmega328.c ../lib/util/Atmega328P/MAX485.h ../lib/util/Atmega328P/avrMacro.h
+
+HNSError.o: ../lib/HNSCore/HNSError.h ../lib/HNSCore/HNSError.c
+	$(CC) $(CFLAGS) $(DEFINE_FLAGS) -c  ../lib/HNSCore/HNSError.c
+
+ADC_Atmega328P.o: ../lib/util/Atmega328P/ADC_Atmega328P.h ../lib/util/Atmega328P/ADC_Atmega328P.c ../lib/util/Atmega328P/avrMacro.h
+	$(CC) $(CFLAGS) $(DEFINE_FLAGS) -c  ../lib/util/Atmega328P/ADC_Atmega328P.c ../lib/util/Atmega328P/avrMacro.h
+
+Time_Atmega328.o: ../lib/util/Atmega328P/Time_Atmega328.h ../lib/util/Atmega328P/Time_Atmega328.c ../lib/util/Atmega328P/avrMacro.h
+	$(CC) $(CFLAGS) $(DEFINE_FLAGS) -c  ../lib/util/Atmega328P/Time_Atmega328.c ../lib/util/Atmega328P/avrMacro.h
+
+
+.phony: clean
+
+clean:
+	rm -rf main HNSTemperatureHumidityDTHxx.o HNSSync.o ADC_Atmega328P.o HNSDevice.o HNSTest.o HNSRouting.o Time_Atmega328.o CRC.o HNSError.o USART_Atmega328.o libHNSCore.a main.elf  main.hex
+
+.phony: upload
+
+upload: main.elf
+	avr-objcopy -O ihex -R .eeprom main.elf main.hex
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -U flash:w:main.hex:i #$(AVRDUDE_WRITE_EEPROM)

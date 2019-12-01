@@ -1,0 +1,59 @@
+#include "label.hpp"
+
+#include <stdint.h>
+#include <stdlib.h>
+
+#include "fonts.h"
+#include "epdpaint.h"
+#include "epd2in7.h"
+
+Label::Label(Epd* display, uint16_t rows, uint16_t charNumber, sFONT* font, textStyle _textStyle){
+  this->display=display;
+  this->font=font;
+
+  if(_textStyle==textStyle_whiteOnBlack){
+    this->textColor=color_white;
+    this->backgroundColor=color_black;
+  }
+  else{ //default
+    this->textColor=color_black;
+    this->backgroundColor=color_white;
+  }
+
+  this->height=rows*font->Height;
+  this->width=charNumber*font->Width;
+
+  this->frame=(uint8_t*)malloc(this->width / 8 * this->height);
+
+  this->paint = new Paint(this->frame, this->width, this->height);
+}
+
+Label::~Label(){
+
+}
+
+int Label::setText(const char* text){
+  this->paint->Clear(this->backgroundColor);
+
+  paint->DrawStringAt(0, 0, text, this->font, this->textColor);
+
+  return 0;
+}
+
+int Label::refresh(){
+  display->TransmitPartialData(this->paint->GetImage(), x, y, wRefresh,hRefresh);
+  display->RefreshPartial(x,y,wRefresh,hRefresh);
+}
+
+void  Label::setTextStyle(textStyle _textStyle){
+
+}
+
+int  Label::setCoordinates(int x, int y){
+  this->x = 0+x;
+  this->y = 264-this->hRefresh-y;
+}
+
+void  Label::setRotate(int rotate){
+
+}

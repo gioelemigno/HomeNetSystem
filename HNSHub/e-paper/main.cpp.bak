@@ -1,0 +1,330 @@
+/**
+ *  @filename   :   main.cpp
+ *  @brief      :   2.7inch e-paper display demo
+ *  @author     :   Yehui from Waveshare
+ *
+ *  Copyright (C) Waveshare     July 31 2017
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documnetation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to  whom the Software is
+ * furished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS OR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "epd2in7.h"
+#include "imagedata.h"
+#include "epdpaint.h"
+#include "label.hpp"
+#include "frame.hpp"
+
+#define COLORED      1
+#define UNCOLORED    0
+int main(){
+  Epd epd;
+  if (epd.Init() != 0) {
+    printf("e-Paper init failed\n");
+    return -1;
+  }
+  epd.ClearFrame();
+  int width = epd.width;
+  int height = epd.height;
+
+  unsigned char* paintMem = (unsigned char*) malloc(width / 8 * height);
+  Paint paint = Paint(paintMem, width, height);
+
+  paint.SetRotate(ROTATE_270);
+  paint.Clear(UNCOLORED);
+  paint.DrawStringAt(0,0, "ciao", &Font20, COLORED);
+
+  epd.DisplayFrame(paint.GetImage());
+  //epd.TransmitPartialData(paint.GetImage(),0,0,paint.GetWidth(),paint.GetHeight());
+
+  int x,y;
+
+
+  int widthLab = 4*(Font20.Width);
+  int heightLab= Font20.Height;
+
+  //int temp = widthLab;
+  //widthLab=heightLab;
+  //heightLab=temp;
+
+  unsigned char* labelMem = (unsigned char*) malloc(widthLab / 8 * heightLab);
+  Paint label = Paint(labelMem, widthLab, heightLab);
+  label.SetRotate(ROTATE_0);
+  label.Clear(UNCOLORED);
+  label.DrawStringAt(0,0, "ciao", &Font20, COLORED);
+
+  //epd.TransmitPartialData(label.GetImage(),0,200, heightLab, widthLab);
+  //epd.RefreshPartial(0,200,heightLab,widthLab);
+
+//return 0;
+
+  paint.Clear(UNCOLORED);
+  paint.DrawStringAt(0,0, "CIAO", &Font20, COLORED);
+  epd.TransmitPartialData(paint.GetImage(),0,0,paint.GetWidth(),paint.GetHeight());
+
+  paint.GetAbsoluteCoordinate(4*(Font20.Width), 0, &x, &y);
+  epd.RefreshPartial(x,y,Font20.Height,4*(Font20.Width));
+
+  //epd.TransmitPartialData(paint.GetImage(),0,0,paint.GetHeight(),paint.GetWidth());
+  //epd.RefreshPartial(0,0,paint.GetHeight(),paint.GetWidth());
+}
+int main(){
+  Epd epd;
+  if (epd.Init() != 0) {
+    printf("e-Paper init failed\n");
+    return -1;
+  }
+
+  // This clears the SRAM of the e-paper display
+  epd.ClearFrame();
+  unsigned char* frame_buffer = (unsigned char*)malloc(epd.width / 8 * epd.height);
+
+  Paint paint(frame_buffer, epd.width, epd.height);
+
+  paint.SetRotate(ROTATE_270);
+
+  paint.Clear(UNCOLORED);
+  paint.DrawCharAt(0, 0, 'A', &Font16, COLORED);
+
+  epd.DisplayFrame(paint.GetImage());
+
+}
+
+
+int _bb_main(){
+  Epd epd;
+if (epd.Init() != 0) {
+    printf("e-Paper init failed\n");
+    return -1;
+}
+
+/* This clears the SRAM of the e-paper display */
+epd.ClearFrame();
+
+/**
+  * Due to RAM not enough in Arduino UNO, a frame buffer is not allowed.
+  * In this case, a smaller image buffer is allocated and you have to
+  * update a partial display several times.
+  * 1 byte = 8 pixels, therefore you have to set 8*N pixels at a time.
+  */
+  unsigned char* frame_buffer = (unsigned char*)malloc(epd.width / 8 * epd.height);
+
+  Paint paint(frame_buffer, epd.width, epd.height);
+
+paint.SetRotate(ROTATE_270);
+
+paint.Clear(UNCOLORED);
+paint.DrawCharAt(0, 0, 'A', &Font16, COLORED);
+//paint.DrawCharAt(0, 16, 'B', &Font16, COLORED);
+
+//paint.DrawStringAt(0, 0, "e-Paper Dem2", &Font16, COLORED);
+//paint.DrawStringAt(0, 16, "e-Paper Dem2", &Font16, COLORED);
+
+epd.DisplayFrame(paint.GetImage());
+
+//return 0;
+int x = 0;
+int y = 0;
+int res = paint.GetAbsoluteCoordinate(0, 0, &x, &y);
+if(res == -1){
+  printf("Errore getAbs\n");
+  return -1;
+}
+printf("x=%d y=%d\n", x, y);
+
+Label label = Label(&epd, 1, 4, &Font20, textStyle_blackOnWhite);
+label.setText("Ciao");
+
+x=0;
+y=204;
+//epd.TransmitPartialData(label.paint->GetImage(), x, y, label.height, label.width);
+//epd.RefreshPartial(x, y, label.height, label.width);
+
+epd.TransmitPartialData(label.paint->GetImage(), x, y, 20, 60);
+epd.RefreshPartial(x, y, 20, 60);
+
+return 0;
+
+
+
+res = paint.GetAbsoluteCoordinate(label.width, label.height, &x, &y);
+if(res == -1){
+  printf("Errore getAbs\n");
+  return -1;
+}
+printf("x=%d y=%d\n", x, y);
+
+//void Epd::TransmitPartialData(const unsigned char* buffer, int x, int y, int w, int l) {
+
+//epd.DisplayFrame(paint.GetImage());
+
+epd.TransmitPartialData(label.paint->GetImage(), x, y, 60, 20);
+epd.RefreshPartial(x, y, 60, 20);
+return 0;
+
+paint.Clear(COLORED);
+paint.DrawStringAt(2, 2, "Hello world!", &Font20, UNCOLORED);
+epd.TransmitPartialData(paint.GetImage(), 0, 64, paint.GetWidth(), paint.GetHeight());
+
+paint.SetWidth(64);
+paint.SetHeight(64);
+
+paint.Clear(UNCOLORED);
+paint.DrawRectangle(0, 0, 40, 50, COLORED);
+paint.DrawLine(0, 0, 40, 50, COLORED);
+paint.DrawLine(40, 0, 0, 50, COLORED);
+epd.TransmitPartialData(paint.GetImage(), 10, 130, paint.GetWidth(), paint.GetHeight());
+
+paint.Clear(UNCOLORED);
+paint.DrawCircle(32, 32, 30, COLORED);
+epd.TransmitPartialData(paint.GetImage(), 90, 120, paint.GetWidth(), paint.GetHeight());
+
+paint.Clear(UNCOLORED);
+paint.DrawFilledRectangle(0, 0, 40, 50, COLORED);
+epd.TransmitPartialData(paint.GetImage(), 10, 200, paint.GetWidth(), paint.GetHeight());
+
+paint.Clear(UNCOLORED);
+paint.DrawFilledCircle(32, 32, 30, COLORED);
+epd.TransmitPartialData(paint.GetImage(), 90, 190, paint.GetWidth(), paint.GetHeight());
+
+/* This displays the data from the SRAM in e-Paper module */
+epd.DisplayFrame();
+
+/* This displays an image */
+//epd.DisplayFrame(IMAGE_DATA);
+
+/* Deep sleep */
+epd.Sleep();
+}
+int bakk_main(){
+  Epd epd;
+if (epd.Init() != 0) {
+    printf("e-Paper init failed\n");
+    return -1;
+}
+//Label(Epd* display, uint16_t rows, uint16_t charNumber, sFONT* font, textStyle _textStyle);
+
+Label label = Label(&epd, 1, 4, &Font20, textStyle_blackOnWhite);
+label.setText("Ciao");
+
+return 0;
+//Frame frame = Frame(&epd);
+//epd.DisplayFrame(paint.GetImage());
+
+//return 0;
+
+unsigned char* frame_buffer = (unsigned char*)malloc(epd.width / 8 * epd.height);
+
+Paint paint(frame_buffer, epd.width, epd.height);
+paint.Clear(UNCOLORED);
+
+/* Draw something to the frame_buffer */
+/* For simplicity, the arguments are explicit numerical coordinates */
+paint.SetRotate(ROTATE_270);
+
+paint.DrawStringAt(0, 0, "e-Paper Demo", &Font20, COLORED);
+//paint.DrawStringAt(0, 20, "e-Paper 2", &Font20, COLORED);
+
+//paint.DrawStringAt(0, 40, "e-Paper 3", &Font8, COLORED);
+//paint.DrawStringAt(0, 50, "e-Paper 4", &Font12, COLORED);
+//paint.DrawStringAt(4, 50, "e-Paper Demo", &Font20, COLORED);
+/*
+paint.DrawRectangle(10, 130, 50, 180, COLORED);
+paint.DrawLine(10, 130, 50, 180, COLORED);
+paint.DrawLine(50, 130, 10, 180, COLORED);
+paint.DrawCircle(120, 150, 30, COLORED);
+paint.DrawFilledRectangle(10, 200, 50, 250, COLORED);
+paint.DrawFilledRectangle(0, 76, 176, 96, COLORED);
+paint.DrawFilledCircle(120, 220, 30, COLORED);
+paint.DrawStringAt(18, 80, "Hello world!", &Font16, UNCOLORED);
+*/
+// Display the frame_buffer
+epd.DisplayFrame(paint.GetImage());
+
+epd.RefreshPartial(0, 0, 160, 160);
+// Display the image buffer
+//epd.DisplayFrame(IMAGE_DATA);
+return 0;
+}
+
+int bak_main(void)
+{
+  Epd epd;
+
+  if (epd.Init() != 0) {
+    printf("e-Paper init failed\n");
+    return -1;
+  }
+
+  /* This clears the SRAM of the e-paper display */
+  epd.ClearFrame();
+
+  /**
+    * Due to RAM not enough in Arduino UNO, a frame buffer is not allowed.
+    * In this case, a smaller image buffer is allocated and you have to
+    * update a partial display several times.
+    * 1 byte = 8 pixels, therefore you have to set 8*N pixels at a time.
+    */
+  unsigned char image[1024];
+  Paint paint(image, 176, 24);    //width should be the multiple of 8
+
+paint.SetRotate(ROTATE_90);
+  paint.Clear(UNCOLORED);
+  paint.DrawStringAt(0, 0, "e-Paper Demo", &Font16, COLORED);
+
+//  epd.TransmitPartialData(paint.GetImage(), 16, 32, paint.GetWidth(), paint.GetHeight());
+//  epd.TransmitPartialData(paint.GetImage(), 0, 0, 150, 30);
+//epd.RefreshPartial(0, 0, 150, 30);
+/*
+  paint.Clear(COLORED);
+  paint.DrawStringAt(2, 2, "Hello world!", &Font20, UNCOLORED);
+  epd.TransmitPartialData(paint.GetImage(), 0, 64, paint.GetWidth(), paint.GetHeight());
+
+  paint.SetWidth(64);
+  paint.SetHeight(64);
+
+  paint.Clear(UNCOLORED);
+  paint.DrawRectangle(0, 0, 40, 50, COLORED);
+  paint.DrawLine(0, 0, 40, 50, COLORED);
+  paint.DrawLine(40, 0, 0, 50, COLORED);
+  epd.TransmitPartialData(paint.GetImage(), 10, 130, paint.GetWidth(), paint.GetHeight());
+
+  paint.Clear(UNCOLORED);
+  paint.DrawCircle(32, 32, 30, COLORED);
+  epd.TransmitPartialData(paint.GetImage(), 90, 120, paint.GetWidth(), paint.GetHeight());
+
+  paint.Clear(UNCOLORED);
+  paint.DrawFilledRectangle(0, 0, 40, 50, COLORED);
+  epd.TransmitPartialData(paint.GetImage(), 10, 200, paint.GetWidth(), paint.GetHeight());
+
+  paint.Clear(UNCOLORED);
+  paint.DrawFilledCircle(32, 32, 30, COLORED);
+  epd.TransmitPartialData(paint.GetImage(), 90, 190, paint.GetWidth(), paint.GetHeight());
+*/
+  // This displays the data from the SRAM in e-Paper module
+  epd.DisplayFrame();
+
+  // This displays an image
+ // epd.DisplayFrame(IMAGE_DATA);
+
+  // Deep sleep
+  epd.Sleep();
+    return 0;
+}

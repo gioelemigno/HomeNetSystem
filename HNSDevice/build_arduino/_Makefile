@@ -1,0 +1,33 @@
+
+CC=avr-gcc
+#CFLAGS=--std=gnu99 -O3 -DF_CPU=16000000UL  -funsigned-char -funsigned-bitfields  -fshort-enums -Wall -Wstrict-prototypes -mmcu=atmega328p $(INCLUDE_DIRS)  -D__AVR_3_BYTE_PC__
+#CFLAGS=-O3 -DF_CPU=16000000UL -Wall -mmcu=atmega328p
+CFLAGS+=-w -Os -g -DF_CPU=16000000UL -flto -fuse-linker-plugin -Wl,--gc-sections -mmcu=atmega328p
+DEFINE_FLAGS=
+
+AVRDUDE=avrdude
+
+AVRDUDE_PROGRAMMER=arduino
+
+#AVRDUDE_PORT = /dev/ttyACM0    # programmer connected to serial device
+AVRDUDE_PORT = /dev/ttyUSB1
+
+AVRDUDE_FLAGS = -p m328p -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) -b 115200
+AVRDUDE_FLAGS += -D -q -V -C /usr/share/arduino/hardware/tools/avr/../avrdude.conf
+
+#avr-gcc -w -Os -g -flto -fuse-linker-plugin -Wl,--gc-sections -mmcu=atmega328p -o out.elf out.cpp ../lib/HNSArduino/build/core.a
+
+main.elf: main.cpp
+	$(CC) $(CFLAGS) $(LIBS) $(DEFINE_FLAGS) -o main.elf main.cpp ../lib/HNSArduino/build/core.a
+	avr-size -C --mcu=atmega328p main.elf
+
+.phony: clean
+
+clean:
+	rm -rf main HNSDevice.o HNSTest.o HNSRouting.o Time_Atmega328.o CRC.o HNSError.o USART_Atmega328.o libHNSCore.a main.elf  main.hex
+
+.phony: upload
+
+upload: main.elf
+	avr-objcopy -O ihex -R .eeprom main.elf main.hex
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -U flash:w:main.hex:i #$(AVRDUDE_WRITE_EEPROM)

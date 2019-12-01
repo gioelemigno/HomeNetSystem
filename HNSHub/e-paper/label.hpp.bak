@@ -1,0 +1,51 @@
+#ifndef LABEL_HPP_
+#define LABEL_HPP_
+
+#include <stdint.h>
+#include "fonts.h"
+#include "epdpaint.h"
+#include "epd2in7.h"
+
+typedef enum textStyle{
+  textStyle_blackOnWhite,
+  textStyle_whiteOnBlack
+}textStyle;
+
+const int color_white=0;
+const int color_black=1;
+
+class Label{
+
+  public:
+    Label(Epd* display, uint16_t rows, uint16_t charNumber, sFONT* font, textStyle _textStyle);
+    ~Label();
+
+    // return number of excess characters
+    int refresh();
+    int setText(const char* text);
+    void setTextStyle(textStyle _textStyle);
+    int setCoordinates(int x, int y);
+    void setRotate(int rotate);
+
+  private:
+    int wRefresh;
+    int hRefresh;
+
+    int width;
+    int height;
+
+    int x;
+    int y;
+
+    int backgroundColor;
+    int textColor;
+
+    sFONT* font;
+    Paint* paint;
+
+    Epd* display;
+
+    unsigned char* frame;
+};
+
+#endif /*LABEL_HPP_*/
